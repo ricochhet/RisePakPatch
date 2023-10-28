@@ -10,7 +10,7 @@ Download the following tools if you do not have them already installed.
     - (or) LLVM-MINGW: [download here](https://github.com/mstorsjo/llvm-mingw)
 - Ninja: [download here](https://github.com/ninja-build/ninja/releases)
 - Cmake: [download here](https://cmake.org/download/)
-- Run the `ninja_build_debug.bat` or `ninja_build_release` to build and run with Ninja.
-
+- Run `build.ps1` to build.
+    - Debug/Release can be specified via `-BuildType <Debug/Release>` (default: Debug)
 ## Usage
 - `RisePakPatch <input> <output>`

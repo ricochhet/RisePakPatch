@@ -1,3 +1,4 @@
 .vscode
+build
 /ninja_build_release/
 /ninja_build_debug/
