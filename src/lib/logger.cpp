@@ -1,13 +1,13 @@
 #include "logger.h"
 
-Logger& Logger::Instance() {
+RisePakPatch::Logger& RisePakPatch::Logger::Instance() {
     static Logger instance;
     return instance;
 }
 
-void Logger::setLogLevel(LogLevel level) { m_logLevel = level; }
+void RisePakPatch::Logger::setLogLevel(LogLevel level) { m_logLevel = level; }
 
-int Logger::getColorCode(LogLevel level) {
+int RisePakPatch::Logger::getColorCode(LogLevel level) {
     switch (level) {
         case LogLevel::OK:
             return 34;
@@ -24,7 +24,7 @@ int Logger::getColorCode(LogLevel level) {
     }
 }
 
-void Logger::log(const std::string& message, LogLevel level) {
+void RisePakPatch::Logger::log(const std::string& message, LogLevel level) {
     if (level <= m_logLevel) {
         std::cout << "\033[1;" << getColorCode(level) << "m";
 
@@ -50,4 +50,4 @@ void Logger::log(const std::string& message, LogLevel level) {
     }
 }
 
-Logger::Logger() { m_logLevel = LogLevel::Info; }
+RisePakPatch::Logger::Logger() { m_logLevel = LogLevel::Info; }

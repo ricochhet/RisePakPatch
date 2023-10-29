@@ -1,24 +1,24 @@
 #include "utils.h"
 
-std::vector<char> Utils::readAllBytes(const std::string& path) {
+std::vector<char> RisePakPatch::Utils::readAllBytes(const std::string& path) {
     std::ifstream     inputFile(path, std::ios::binary);
     std::vector<char> bytes((std::istreambuf_iterator<char>(inputFile)), (std::istreambuf_iterator<char>()));
     return bytes;
 }
 
-std::string Utils::toLower(const std::string& str) {
+std::string RisePakPatch::Utils::toLower(const std::string& str) {
     std::string result = str;
     std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) { return std::tolower(c); });
     return result;
 }
 
-std::string Utils::toUpper(const std::string& str) {
+std::string RisePakPatch::Utils::toUpper(const std::string& str) {
     std::string result = str;
     std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) { return std::toupper(c); });
     return result;
 }
 
-std::string Utils::replaceAllInString(const std::string& baseString, const std::string& stringToReplace, const std::string& replacement) {
+std::string RisePakPatch::Utils::replaceAllInString(const std::string& baseString, const std::string& stringToReplace, const std::string& replacement) {
     std::string result         = baseString;
     size_t      stringPosition = 0;
 
@@ -30,7 +30,7 @@ std::string Utils::replaceAllInString(const std::string& baseString, const std::
     return result;
 }
 
-std::wstring Utils::utf8ToUtf16(const std::string& utf8str) {
+std::wstring RisePakPatch::Utils::utf8ToUtf16(const std::string& utf8str) {
     std::wstring utf16str;
     utf16str.reserve(utf8str.length());
 

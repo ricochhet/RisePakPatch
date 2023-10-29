@@ -8,6 +8,8 @@
 
 #include <fstream>
 
-uint32_t murmurhash3_wstr(const std::string& u8_key, const uint32_t seed);
+namespace RisePakPatch {
+    uint32_t murmurhash3_wstr(const std::string& u8_key, const uint32_t seed);
+}
 
 #endif  // RISEPAKPATCH_MURMURHASH_INCLUDED

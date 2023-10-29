@@ -2,11 +2,11 @@
 #include "lib/risepakpatch.h"
 
 int main(int argc, char* argv[]) {
-    Logger::Instance().setLogLevel(LogLevel::Error);
-    Logger::Instance().log("Started (OK)", LogLevel::OK);
+    RisePakPatch::Logger::Instance().setLogLevel(RisePakPatch::LogLevel::Error);
+    RisePakPatch::Logger::Instance().log("Started (OK)", RisePakPatch::LogLevel::OK);
 
     if (argc != 3) {
-        Logger::Instance().log("Usage: <arg1> <arg2>", LogLevel::Error);
+        RisePakPatch::Logger::Instance().log("Usage: <arg1> <arg2>", RisePakPatch::LogLevel::Error);
         return 1;
     }
 
