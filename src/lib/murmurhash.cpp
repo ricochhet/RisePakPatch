@@ -1,4 +1,4 @@
-#include <murmurhash.h>
+#include "murmurhash.h"
 
 uint32_t murmurhash3_wstr(const std::string& u8_key, const uint32_t seed) {
     std::wstring u16_key = Utils::utf8ToUtf16(u8_key);

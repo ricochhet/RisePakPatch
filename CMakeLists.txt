@@ -13,9 +13,11 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src
 )
 
-file(GLOB SOURCES "src/*.cpp" "src/include/*.h")
+file(GLOB MAIN_SOURCES "src/*.cpp" "src/lib/*.h")
+file(GLOB LIB_SOURCES "src/lib/*.cpp" "src/lib/*.h")
 
 add_executable(RisePakPatch
-    ${SOURCES}
+    ${MAIN_SOURCES}
+    ${LIB_SOURCES}
     ${MURMURHASH3_SOURCES}
 )

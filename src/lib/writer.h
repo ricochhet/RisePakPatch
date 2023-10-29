@@ -1,5 +1,5 @@
-#ifndef RISEPAKPATCH_WRITER_INCLUDED
-#define RISEPAKPATCH_WRITER_INCLUDED
+#ifndef _RCHT_WRITER_INCLUDED
+#define _RCHT_WRITER_INCLUDED
 
 #pragma once
 
@@ -21,4 +21,4 @@ private:
     std::ofstream m_Stream;
 };
 
-#endif  // RISEPAKPATCH_WRITER_INCLUDED
+#endif  // _RCHT_WRITER_INCLUDED

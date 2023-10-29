@@ -1,5 +1,5 @@
-#include <logger.h>
-#include <risepakpatch.h>
+#include "lib/logger.h"
+#include "lib/risepakpatch.h"
 
 int main(int argc, char* argv[]) {
     Logger::Instance().setLogLevel(LogLevel::Error);
