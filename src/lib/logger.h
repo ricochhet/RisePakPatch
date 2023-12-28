@@ -1,5 +1,5 @@
-#ifndef _RCHT_LOGGER_INCLUDED_
-#define _RCHT_LOGGER_INCLUDED_
+#ifndef _PAKTOOL_LOGGER_INCLUDED_
+#define _PAKTOOL_LOGGER_INCLUDED_
 
 #pragma once
 
@@ -24,4 +24,4 @@ namespace RisePakPatch {
     };
 }
 
-#endif  // _RCHT_LOGGER_INCLUDED_
+#endif  // _PAKTOOL_LOGGER_INCLUDED_

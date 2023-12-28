@@ -1,5 +1,5 @@
-#ifndef RISEPAKPATCH_UTILS_INCLUDED
-#define RISEPAKPATCH_UTILS_INCLUDED
+#ifndef _PAKTOOL_UTILS_INCLUDED
+#define _PAKTOOL_UTILS_INCLUDED
 
 #pragma once
 
@@ -16,7 +16,8 @@ namespace RisePakPatch {
         static std::string       toLower(const std::string& str);
         static std::string       toUpper(const std::string& str);
         static std::wstring      utf8ToUtf16(const std::string& utf8str);
+        static void              writeAllBytes(const std::string& filename, const std::vector<char>& data);
     };
 }
 
-#endif  // RISEPAKPATCH_UTILS_INCLUDED
+#endif  // _PAKTOOL_UTILS_INCLUDED

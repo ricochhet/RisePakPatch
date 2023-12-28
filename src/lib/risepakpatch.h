@@ -1,17 +1,17 @@
-#ifndef RISEPAKPATCH_INCLUDED
-#define RISEPAKPATCH_INCLUDED
+#ifndef PAKTOOL_INCLUDED
+#define PAKTOOL_INCLUDED
 
 #pragma once
-
-#include "logger.h"
-#include "murmurhash.h"
-#include "utils.h"
 
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <vector>
+
+#include "logger.h"
+#include "murmurhash.h"
+#include "utils.h"
 
 namespace RisePakPatch {
     struct FileEntry {
@@ -23,6 +23,10 @@ namespace RisePakPatch {
     };
 
     void processDirectory(const std::string& path, const std::string& outputFile);
+    void extractDirectory(const std::string& inputFile, const std::string& outputDirectory);
+
+    void writeLookupTable(const std::string& lookupFile);
+    void readLookupTable(const std::string& lookupFile);
 }
 
-#endif  // RISEPAKPATCH_INCLUDED
+#endif  // PAKTOOL_INCLUDED

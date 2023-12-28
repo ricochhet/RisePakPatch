@@ -12,5 +12,6 @@ Download the following tools if you do not have them already installed.
 - Cmake: [download here](https://cmake.org/download/)
 - Run `build.ps1` to build.
     - Debug/Release can be specified via `-BuildType <Debug/Release>` (default: Debug)
+    - Formatting is done via `clang-format -i src/lib/*.cpp`
 ## Usage
 - `RisePakPatch <input> <output>`

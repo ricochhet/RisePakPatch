@@ -1,5 +1,5 @@
-#ifndef _RCHT_WRITER_INCLUDED
-#define _RCHT_WRITER_INCLUDED
+#ifndef _PAKTOOL_WRITER_INCLUDED
+#define _PAKTOOL_WRITER_INCLUDED
 
 #pragma once
 
@@ -23,4 +23,4 @@ namespace RisePakPatch {
     };
 }
 
-#endif  // _RCHT_WRITER_INCLUDED
+#endif  // _PAKTOOL_WRITER_INCLUDED

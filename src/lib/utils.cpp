@@ -55,3 +55,14 @@ std::wstring RisePakPatch::Utils::utf8ToUtf16(const std::string& utf8str) {
 
     return utf16str;
 }
+
+void RisePakPatch::Utils::writeAllBytes(const std::string& filename, const std::vector<char>& data) {
+    std::ofstream file(filename, std::ios::binary);
+
+    if (!file.is_open()) {
+        return;
+    }
+
+    file.write(data.data(), data.size());
+    file.close();
+}

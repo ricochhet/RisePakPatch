@@ -1,5 +1,18 @@
 #include "risepakpatch.h"
+
+#include <unordered_map>
+
+#include "reader.h"
 #include "writer.h"
+
+std::unordered_map<uint32_t, std::string> reverseLookupTable;
+std::string                               reverseLookup(uint32_t hash) {
+    auto it = reverseLookupTable.find(hash);
+    if (it != reverseLookupTable.end()) {
+        return it->second;
+    }
+    return "";
+}
 
 void RisePakPatch::processDirectory(const std::string& path, const std::string& outputFile) {
     std::string directory = std::filesystem::absolute(path).string();
@@ -56,6 +69,9 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
 
         list.emplace_back(fileEntry2);
         writer.write(array2.data(), array2.size());
+
+        reverseLookupTable[hash]  = text;
+        reverseLookupTable[hash2] = text;
     }
 
     writer.seekFromBeginning(16);
@@ -72,4 +88,93 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
     }
 
     writer.close();
+    writeLookupTable(outputFile + ".rlt");
+}
+
+void RisePakPatch::extractDirectory(const std::string& inputFile, const std::string& outputDirectory) {
+    Reader reader(inputFile);
+    readLookupTable(inputFile + ".rlt");
+
+    if (!reader.isValid()) {
+        Logger::Instance().log("Error opening input file: " + inputFile, LogLevel::Error);
+        return;
+    }
+
+    uint32_t unk0 = reader.readUInt32();
+    uint32_t unk1 = reader.readUInt32();
+    uint32_t unk2 = reader.readUInt32();
+    uint32_t unk3 = reader.readUInt32();
+
+    if (unk0 != 1095454795u || unk1 != 4u) {
+        Logger::Instance().log("Invalid file format", LogLevel::Error);
+        return;
+    }
+
+    std::vector<FileEntry> fileList;
+    for (uint32_t i = 0; i < unk2; ++i) {
+        FileEntry fileEntry;
+        fileEntry.fileNameLower = reader.readUInt32();
+        fileEntry.fileNameUpper = reader.readUInt32();
+        fileEntry.offset        = reader.readUInt64();
+        fileEntry.uncompSize    = reader.readUInt64();
+        reader.skip(8);
+        reader.skip(8);
+        reader.skip(4);
+        reader.skip(4);
+
+        fileList.push_back(fileEntry);
+    }
+
+    for (const FileEntry& fileEntry : fileList) {
+        std::string filePath = outputDirectory + "/" + reverseLookup(fileEntry.fileNameLower);
+        std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
+
+        Logger::Instance().log(filePath, LogLevel::Info);
+
+        std::vector<char> fileData(fileEntry.uncompSize);
+        reader.seek(fileEntry.offset);
+        reader.read(fileData.data(), fileData.size());
+        Utils::writeAllBytes(filePath, fileData);
+    }
+}
+
+void RisePakPatch::writeLookupTable(const std::string& lookupFile) {
+    std::ofstream file(lookupFile, std::ios::binary);
+
+    if (!file.is_open()) {
+        Logger::Instance().log("Could not create lookup table.", LogLevel::Error);
+        return;
+    }
+
+    for (const auto& entry : reverseLookupTable) {
+        file.write(reinterpret_cast<const char*>(&entry.first), sizeof(uint32_t));
+        file.write(entry.second.c_str(), entry.second.size() + 1);
+    }
+
+    file.close();
+}
+
+void RisePakPatch::readLookupTable(const std::string& lookupFile) {
+    std::ifstream file(lookupFile, std::ios::binary);
+
+    if (!file.is_open()) {
+        Logger::Instance().log("Could not read lookup table.", LogLevel::Error);
+        return;
+    }
+
+    reverseLookupTable.clear();
+
+    while (!file.eof()) {
+        uint32_t hash;
+        file.read(reinterpret_cast<char*>(&hash), sizeof(uint32_t));
+
+        if (!file.eof()) {
+            std::string fileName;
+            std::getline(file, fileName, '\0');
+
+            reverseLookupTable[hash] = fileName;
+        }
+    }
+
+    file.close();
 }
