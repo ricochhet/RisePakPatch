@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <string>
+
 namespace RisePakPatch {
     enum class LogLevel { OK, Debug, Info, Warning, Error };
 
@@ -24,4 +25,6 @@ namespace RisePakPatch {
     };
 }
 
+#define LOG(message, level) RisePakPatch::Logger::Instance().log(message, level)
+#define LOG_LEVEL(level) RisePakPatch::Logger::Instance().setLogLevel(level)
 #endif  // _PAKTOOL_LOGGER_INCLUDED_

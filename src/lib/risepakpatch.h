@@ -22,11 +22,11 @@ namespace RisePakPatch {
         uint64_t    uncompSize;
     };
 
-    void processDirectory(const std::string& path, const std::string& outputFile);
-    void extractDirectory(const std::string& inputFile, const std::string& outputDirectory);
+    void processDirectory(const std::string& path, const std::string& outputFile, const bool& embedLookupTable);
+    void extractDirectory(const std::string& inputFile, const std::string& outputDirectory, const bool& embedLookupTable);
 
-    void writeLookupTable(const std::string& lookupFile);
-    void readLookupTable(const std::string& lookupFile);
+    void writeLookupTableToFile(const std::string& lookupFile);
+    void readLookupTableFromFile(const std::string& lookupFile);
 }
 
 #endif  // PAKTOOL_INCLUDED

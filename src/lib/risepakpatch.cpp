@@ -5,6 +5,8 @@
 #include "reader.h"
 #include "writer.h"
 
+#define MAX_SINGLE_FILE_SIZE 1073741824
+
 std::unordered_map<uint32_t, std::string> reverseLookupTable;
 std::string                               reverseLookup(uint32_t hash) {
     auto it = reverseLookupTable.find(hash);
@@ -14,7 +16,7 @@ std::string                               reverseLookup(uint32_t hash) {
     return "";
 }
 
-void RisePakPatch::processDirectory(const std::string& path, const std::string& outputFile) {
+void RisePakPatch::processDirectory(const std::string& path, const std::string& outputFile, const bool& embedLookupTable) {
     std::string directory = std::filesystem::absolute(path).string();
 
     if (!std::filesystem::is_directory(directory)) {
@@ -22,7 +24,7 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
     }
 
     if (std::filesystem::exists(outputFile)) {
-        Logger::Instance().log("Deleting existing output file...", LogLevel::Info);
+        LOG("Deleting existing output file...", LogLevel::Info);
         std::filesystem::remove(outputFile);
     }
 
@@ -39,7 +41,7 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
         return std::filesystem::path(a).parent_path() < std::filesystem::path(b).parent_path();
     });
 
-    Logger::Instance().log("Processing " + std::to_string(sortedFiles.size()) + " files", LogLevel::Info);
+    LOG("Processing " + std::to_string(sortedFiles.size()) + " files", LogLevel::Info);
     std::vector<FileEntry> list;
     Writer                 writer(outputFile);
     writer.writeUInt32(1095454795u);
@@ -76,7 +78,7 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
 
     writer.seekFromBeginning(16);
     for (const FileEntry& item : list) {
-        Logger::Instance().log(item.fileName + " " + std::to_string(item.fileNameUpper) + " " + std::to_string(item.fileNameLower), LogLevel::Info);
+        LOG(item.fileName + " " + std::to_string(item.fileNameUpper) + " " + std::to_string(item.fileNameLower), LogLevel::Info);
         writer.writeUInt32(item.fileNameLower);
         writer.writeUInt32(item.fileNameUpper);
         writer.writeUInt64(item.offset);
@@ -87,16 +89,60 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
         writer.writeUInt32(0u);
     }
 
+    writer.seekFromEnd(0);
+    uint32_t lookupTableSize = 0;
+    if (embedLookupTable) {
+        for (const auto& entry : reverseLookupTable) {
+            uint32_t firstSize  = sizeof(uint32_t);
+            uint32_t secondSize = entry.second.size() + 1;
+            lookupTableSize += (firstSize + secondSize);
+
+            writer.write(reinterpret_cast<const char*>(&entry.first), firstSize);
+            writer.write(entry.second.c_str(), secondSize);
+        }
+
+        writer.writeUInt32(lookupTableSize);
+    } else {
+        writeLookupTableToFile(outputFile + ".data");
+    }
+
+    if (writer.size() > MAX_SINGLE_FILE_SIZE) {
+        LOG("File data exceeded 1GB.", LogLevel::Error);
+        return;
+    }
+
     writer.close();
-    writeLookupTable(outputFile + ".rlt");
 }
 
-void RisePakPatch::extractDirectory(const std::string& inputFile, const std::string& outputDirectory) {
+void RisePakPatch::extractDirectory(const std::string& inputFile, const std::string& outputDirectory, const bool& embedLookupTable) {
     Reader reader(inputFile);
-    readLookupTable(inputFile + ".rlt");
+    reverseLookupTable.clear();
+
+    if (embedLookupTable) {
+        reader.seekFromEnd(-sizeof(uint32_t));
+        size_t lookupTableSize = reader.readUInt32();
+        reader.seekFromEnd(-lookupTableSize - sizeof(uint32_t));
+        LOG(std::to_string(reader.position()), LogLevel::Warning);
+
+        while (reader.position() < reader.size() - sizeof(uint32_t)) {
+            uint32_t hash = reader.readUInt32();
+
+            std::string fileName;
+            char        c;
+            while ((c = reader.readChar()) != '\0') {
+                fileName.push_back(c);
+            }
+
+            reverseLookupTable[hash] = fileName;
+        }
+    } else {
+        readLookupTableFromFile(inputFile + ".data");
+    }
+
+    reader.seek(0);
 
     if (!reader.isValid()) {
-        Logger::Instance().log("Error opening input file: " + inputFile, LogLevel::Error);
+        LOG("Error opening input file: " + inputFile, LogLevel::Error);
         return;
     }
 
@@ -106,7 +152,7 @@ void RisePakPatch::extractDirectory(const std::string& inputFile, const std::str
     uint32_t unk3 = reader.readUInt32();
 
     if (unk0 != 1095454795u || unk1 != 4u) {
-        Logger::Instance().log("Invalid file format", LogLevel::Error);
+        LOG("Invalid file format", LogLevel::Error);
         return;
     }
 
@@ -128,21 +174,25 @@ void RisePakPatch::extractDirectory(const std::string& inputFile, const std::str
     for (const FileEntry& fileEntry : fileList) {
         std::string filePath = outputDirectory + "/" + reverseLookup(fileEntry.fileNameLower);
         std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
-
-        Logger::Instance().log(filePath, LogLevel::Info);
+        LOG(filePath, LogLevel::Info);
 
         std::vector<char> fileData(fileEntry.uncompSize);
         reader.seek(fileEntry.offset);
         reader.read(fileData.data(), fileData.size());
+        if (fileData.size() > MAX_SINGLE_FILE_SIZE) {
+            LOG("File data exceeded 1GB.", LogLevel::Error);
+            break;
+        }
+
         Utils::writeAllBytes(filePath, fileData);
     }
 }
 
-void RisePakPatch::writeLookupTable(const std::string& lookupFile) {
+void RisePakPatch::writeLookupTableToFile(const std::string& lookupFile) {
     std::ofstream file(lookupFile, std::ios::binary);
 
     if (!file.is_open()) {
-        Logger::Instance().log("Could not create lookup table.", LogLevel::Error);
+        LOG("Could not create lookup table.", LogLevel::Error);
         return;
     }
 
@@ -154,15 +204,13 @@ void RisePakPatch::writeLookupTable(const std::string& lookupFile) {
     file.close();
 }
 
-void RisePakPatch::readLookupTable(const std::string& lookupFile) {
+void RisePakPatch::readLookupTableFromFile(const std::string& lookupFile) {
     std::ifstream file(lookupFile, std::ios::binary);
 
     if (!file.is_open()) {
-        Logger::Instance().log("Could not read lookup table.", LogLevel::Error);
+        LOG("Could not read lookup table.", LogLevel::Error);
         return;
     }
-
-    reverseLookupTable.clear();
 
     while (!file.eof()) {
         uint32_t hash;

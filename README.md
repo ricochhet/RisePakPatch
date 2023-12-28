@@ -14,4 +14,7 @@ Download the following tools if you do not have them already installed.
     - Debug/Release can be specified via `-BuildType <Debug/Release>` (default: Debug)
     - Formatting is done via `clang-format -i src/lib/*.cpp`
 ## Usage
-- `RisePakPatch <input> <output>`
+- `RisePakPatch <patch/extract> <input> <output>`
+    - Patch and Extract by default will create a separate `*.data` file. This is a lookup table created to ensure extracting of data can keep file paths intact.
+    - `patch2` is a function that will embed the lookup table at the end of the file. The file contains a modified structure that contains the lookup table data as well as the size of the lookup table. 
+    - `extract2` is a function that will read an embedded lookup table based on the tables size (uint32).
