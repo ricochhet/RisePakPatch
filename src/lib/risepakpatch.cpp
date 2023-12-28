@@ -106,11 +106,6 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
         writeLookupTableToFile(outputFile + ".data");
     }
 
-    if (writer.size() > MAX_SINGLE_FILE_SIZE) {
-        LOG("File data exceeded 1GB.", LogLevel::Error);
-        return;
-    }
-
     writer.close();
 }
 
