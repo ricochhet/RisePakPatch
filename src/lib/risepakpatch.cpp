@@ -92,19 +92,8 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
     }
 
     writer.seekFromEnd(0);
-    uint32_t lookupTableSize = 0;
     if (embedLookupTable) {
-        for (const auto& entry : reverseLookupTable) {
-            uint32_t firstSize  = sizeof(uint32_t);
-            uint32_t secondSize = entry.second.size() + 1;
-            lookupTableSize += (firstSize + secondSize);
-
-            writer.write(reinterpret_cast<const char*>(&entry.first), firstSize);
-            writer.write(entry.second.c_str(), secondSize);
-        }
-
-        writer.writeUInt32(lookupTableSize);
-        writer.writeUInt32(RISE_PAK_FOOTER);
+        writeLookupTable(writer);
     } else {
         writeLookupTableToFile(outputFile + ".data");
     }
@@ -117,27 +106,7 @@ void RisePakPatch::extractDirectory(const std::string& inputFile, const std::str
     reverseLookupTable.clear();
 
     if (embedLookupTable) {
-        reader.seekFromEnd(-sizeof(RISE_PAK_FOOTER_SIZE));
-        size_t lookupTableSize = reader.readUInt32();
-        size_t risePakFooter   = reader.readUInt32();
-        if (risePakFooter != RISE_PAK_FOOTER) {
-            LOG("Could not find RISE_PAK_FOOTER", LogLevel::Error);
-            return;
-        }
-        LOG(std::to_string(risePakFooter), LogLevel::Debug);
-        reader.seekFromEnd(-lookupTableSize - sizeof(RISE_PAK_FOOTER_SIZE));
-
-        while (reader.position() < reader.size() - sizeof(RISE_PAK_FOOTER_SIZE)) {
-            uint32_t hash = reader.readUInt32();
-
-            std::string fileName;
-            char        c;
-            while ((c = reader.readChar()) != '\0') {
-                fileName.push_back(c);
-            }
-
-            reverseLookupTable[hash] = fileName;
-        }
+        readLookupTable(reader);
     } else {
         readLookupTableFromFile(inputFile + ".data");
     }
@@ -196,7 +165,12 @@ void RisePakPatch::extractDirectory(const std::string& inputFile, const std::str
 }
 
 void RisePakPatch::writeLookupTableToFile(const std::string& lookupFile) {
-    Writer   writer(lookupFile);
+    Writer writer(lookupFile);
+    writeLookupTable(writer);
+    writer.close();
+}
+
+void RisePakPatch::writeLookupTable(Writer& writer) {
     uint32_t lookupTableSize = 0;
     for (const auto& entry : reverseLookupTable) {
         uint32_t firstSize  = sizeof(uint32_t);
@@ -209,11 +183,15 @@ void RisePakPatch::writeLookupTableToFile(const std::string& lookupFile) {
 
     writer.writeUInt32(lookupTableSize);
     writer.writeUInt32(RISE_PAK_FOOTER);
-    writer.close();
 }
 
 void RisePakPatch::readLookupTableFromFile(const std::string& lookupFile) {
     Reader reader(lookupFile);
+    readLookupTable(reader);
+    reader.close();
+}
+
+void RisePakPatch::readLookupTable(Reader& reader) {
     reader.seekFromEnd(-sizeof(RISE_PAK_FOOTER_SIZE));
     size_t lookupTableSize = reader.readUInt32();
     size_t risePakFooter   = reader.readUInt32();
@@ -235,6 +213,4 @@ void RisePakPatch::readLookupTableFromFile(const std::string& lookupFile) {
 
         reverseLookupTable[hash] = fileName;
     }
-
-    reader.close();
 }

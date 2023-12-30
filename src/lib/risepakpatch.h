@@ -11,7 +11,9 @@
 
 #include "logger.h"
 #include "murmurhash.h"
+#include "reader.h"
 #include "utils.h"
+#include "writer.h"
 
 namespace RisePakPatch {
     struct FileEntry {
@@ -26,7 +28,10 @@ namespace RisePakPatch {
     void extractDirectory(const std::string& inputFile, const std::string& outputDirectory, const bool& embedLookupTable);
 
     void writeLookupTableToFile(const std::string& lookupFile);
+    void writeLookupTable(Writer& writer);
+
     void readLookupTableFromFile(const std::string& lookupFile);
+    void readLookupTable(Reader& reader);
 }
 
 #endif  // PAKTOOL_INCLUDED
