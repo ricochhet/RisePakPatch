@@ -6,6 +6,8 @@
 #include "writer.h"
 
 #define MAX_SINGLE_FILE_SIZE 1073741824
+#define RISE_PAK_FOOTER 1163086162u
+#define RISE_PAK_FOOTER_SIZE sizeof(uint64_t)
 
 std::unordered_map<uint32_t, std::string> reverseLookupTable;
 std::string                               reverseLookup(uint32_t hash) {
@@ -102,6 +104,7 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
         }
 
         writer.writeUInt32(lookupTableSize);
+        writer.writeUInt32(RISE_PAK_FOOTER);
     } else {
         writeLookupTableToFile(outputFile + ".data");
     }
@@ -114,11 +117,17 @@ void RisePakPatch::extractDirectory(const std::string& inputFile, const std::str
     reverseLookupTable.clear();
 
     if (embedLookupTable) {
-        reader.seekFromEnd(-sizeof(uint32_t));
+        reader.seekFromEnd(-sizeof(RISE_PAK_FOOTER_SIZE));
         size_t lookupTableSize = reader.readUInt32();
-        reader.seekFromEnd(-lookupTableSize - sizeof(uint32_t));
+        size_t risePakFooter = reader.readUInt32();
+        if (risePakFooter != RISE_PAK_FOOTER) {
+            LOG("Could not find RISE_PAK_FOOTER", LogLevel::Error);
+            return;
+        }
+        LOG(std::to_string(risePakFooter), LogLevel::Debug);
+        reader.seekFromEnd(-lookupTableSize - sizeof(RISE_PAK_FOOTER_SIZE));
 
-        while (reader.position() < reader.size() - sizeof(uint32_t)) {
+        while (reader.position() < reader.size() - sizeof(RISE_PAK_FOOTER_SIZE)) {
             uint32_t hash = reader.readUInt32();
 
             std::string fileName;
@@ -139,6 +148,8 @@ void RisePakPatch::extractDirectory(const std::string& inputFile, const std::str
         LOG("Error opening input file: " + inputFile, LogLevel::Error);
         return;
     }
+
+    LOG(std::to_string(reader.size()), LogLevel::Error);
 
     uint32_t unk0 = reader.readUInt32();
     uint32_t unk1 = reader.readUInt32();
