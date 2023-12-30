@@ -31,7 +31,7 @@ namespace RisePakPatch {
         void        seek(std::streampos position) { m_Stream.seekg(position); }
         void        seekFromBeginning(std::size_t position) { m_Stream.seekg(position, std::ios_base::beg); }
         void        seekFromEnd(std::size_t position) { m_Stream.seekg(position, std::ios_base::end); }
-        void        skip(std::streampos position) { m_Stream.seekg(position, std::ios_base::cur); }
+        void        seekFromCurrent(std::streampos position) { m_Stream.seekg(position, std::ios_base::cur); }
         int         position() { return m_Stream.tellg(); }
         std::size_t size() {
             std::streampos currentPos = m_Stream.tellg();

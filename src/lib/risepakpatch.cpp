@@ -137,10 +137,10 @@ void RisePakPatch::extractDirectory(const std::string& inputFile, const std::str
         fileEntry.fileNameUpper = reader.readUInt32();
         fileEntry.offset        = reader.readUInt64();
         fileEntry.uncompSize    = reader.readUInt64();
-        reader.skip(8);
-        reader.skip(8);
-        reader.skip(4);
-        reader.skip(4);
+        reader.seekFromCurrent(8);
+        reader.seekFromCurrent(8);
+        reader.seekFromCurrent(4);
+        reader.seekFromCurrent(4);
 
         fileList.push_back(fileEntry);
     }
@@ -158,7 +158,9 @@ void RisePakPatch::extractDirectory(const std::string& inputFile, const std::str
             break;
         }
 
-        Utils::writeAllBytes(filePath, fileData);
+        Writer fileEntryWriter(filePath);
+        fileEntryWriter.write(fileData.data(), fileData.size());
+        fileEntryWriter.close();
     }
 
     reader.close();
