@@ -66,9 +66,15 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
             text.erase(0, 1);
         }
 
-        uint32_t          hash   = murmurhash3_wstr(Utils::toLower(text).c_str(), UINT_MAX);
-        uint32_t          hash2  = murmurhash3_wstr(Utils::toUpper(text).c_str(), UINT_MAX);
-        std::vector<char> array2 = Utils::readAllBytes(obj);
+        uint32_t hash  = murmurhash3_wstr(Utils::toLower(text).c_str(), UINT_MAX);
+        uint32_t hash2 = murmurhash3_wstr(Utils::toUpper(text).c_str(), UINT_MAX);
+        Reader   bytes(obj);
+        if (bytes.size() > MAX_SINGLE_FILE_SIZE) {
+            LOG("processDirectory(): File data exceeded 1GB in file entry bytes.", LogLevel::Error);
+            return;
+        }
+        std::vector<char> array2(bytes.size());
+        bytes.read(array2.data(), array2.size());
 
         fileEntry2.fileName      = text;
         fileEntry2.offset        = (uint64_t)writer.position();
@@ -77,6 +83,11 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
         fileEntry2.fileNameUpper = hash2;
 
         list.emplace_back(fileEntry2);
+        if (array2.size() > MAX_SINGLE_FILE_SIZE) {
+            LOG("processDirectory(): File data exceeded 1GB in file entry buffer.", LogLevel::Error);
+            return;
+        }
+        LOG("processDirectory(): Writing file: " + text + " of size: " + std::to_string(array2.size()), LogLevel::Info);
         writer.write(array2.data(), array2.size());
 
         reverseLookupTable[hash]  = text;
@@ -85,7 +96,7 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
 
     writer.seekFromBeginning(16);
     for (const FileEntry& item : list) {
-        LOG(item.fileName + " " + std::to_string(item.fileNameUpper) + " " + std::to_string(item.fileNameLower), LogLevel::Info);
+        LOG("processDirectory(): Writing entry: " + item.fileName + " " + std::to_string(item.fileNameUpper) + " " + std::to_string(item.fileNameLower), LogLevel::Info);
         writer.writeUInt32(item.fileNameLower);
         writer.writeUInt32(item.fileNameUpper);
         writer.writeUInt64(item.offset);

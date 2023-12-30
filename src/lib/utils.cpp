@@ -1,11 +1,5 @@
 #include "utils.h"
 
-std::vector<char> RisePakPatch::Utils::readAllBytes(const std::string& path) {
-    std::ifstream     inputFile(path, std::ios::binary);
-    std::vector<char> bytes((std::istreambuf_iterator<char>(inputFile)), (std::istreambuf_iterator<char>()));
-    return bytes;
-}
-
 std::string RisePakPatch::Utils::toLower(const std::string& str) {
     std::string result = str;
     std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) { return std::tolower(c); });
