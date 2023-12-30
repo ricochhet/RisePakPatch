@@ -8,7 +8,14 @@
 namespace RisePakPatch {
     class Writer {
     public:
-        Writer(std::string fileName) { m_Stream.open(fileName, std::ios::binary); }
+        Writer(std::string fileName, const bool append = false) {
+            std::ifstream check(fileName);
+            if (append) {
+                m_Stream.open(fileName, std::ios::binary | std::ios::app);
+            } else {
+                m_Stream.open(fileName, std::ios::binary);
+            }
+        }
         ~Writer() { m_Stream.close(); }
 
         bool        isValid() const { return m_Stream.is_open(); }

@@ -32,6 +32,9 @@ namespace RisePakPatch {
 
     void readLookupTableFromFile(const std::string& lookupFile);
     void readLookupTable(Reader& reader);
+
+    void compressPakAndTable(const std::string& inputFile);
+    void decompressPakAndTable(const std::string& inputFile);
 }
 
 #endif  // PAKTOOL_INCLUDED

@@ -46,6 +46,11 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
     LOG("Processing " + std::to_string(sortedFiles.size()) + " files", LogLevel::Info);
     std::vector<FileEntry> list;
     Writer                 writer(outputFile);
+    if (!writer.isValid()) {
+        LOG("Error opening input file: " + outputFile, LogLevel::Error);
+        return;
+    }
+
     writer.writeUInt32(1095454795u);
     writer.writeUInt32(4u);
     writer.writeUInt32((uint32_t)sortedFiles.size());
@@ -98,11 +103,21 @@ void RisePakPatch::processDirectory(const std::string& path, const std::string& 
         writeLookupTableToFile(outputFile + ".data");
     }
 
+    if (writer.size() > MAX_SINGLE_FILE_SIZE) {
+        LOG("File data exceeded 1GB.", LogLevel::Error);
+        return;
+    }
+
     writer.close();
 }
 
 void RisePakPatch::extractDirectory(const std::string& inputFile, const std::string& outputDirectory, const bool& embedLookupTable) {
     Reader reader(inputFile);
+    if (!reader.isValid()) {
+        LOG("Error opening input file: " + inputFile, LogLevel::Error);
+        return;
+    }
+
     reverseLookupTable.clear();
 
     if (embedLookupTable) {
@@ -112,13 +127,6 @@ void RisePakPatch::extractDirectory(const std::string& inputFile, const std::str
     }
 
     reader.seek(0);
-
-    if (!reader.isValid()) {
-        LOG("Error opening input file: " + inputFile, LogLevel::Error);
-        return;
-    }
-
-    LOG(std::to_string(reader.size()), LogLevel::Error);
 
     uint32_t unk0 = reader.readUInt32();
     uint32_t unk1 = reader.readUInt32();
@@ -145,8 +153,19 @@ void RisePakPatch::extractDirectory(const std::string& inputFile, const std::str
         fileList.push_back(fileEntry);
     }
 
+    if (reverseLookupTable.size() <= 0) {
+        LOG("Empty lookup table", LogLevel::Error);
+        return;
+    }
+
     for (const FileEntry& fileEntry : fileList) {
-        std::string filePath = outputDirectory + "/" + reverseLookup(fileEntry.fileNameLower);
+        std::string name = reverseLookup(fileEntry.fileNameLower);
+        if (name.empty()) {
+            LOG("Could not extract, data missing.", LogLevel::Error);
+            break;
+        }
+
+        std::string filePath = outputDirectory + "/" + name;
         std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
         LOG(filePath, LogLevel::Info);
 
@@ -166,8 +185,85 @@ void RisePakPatch::extractDirectory(const std::string& inputFile, const std::str
     reader.close();
 }
 
+void RisePakPatch::compressPakAndTable(const std::string& inputFile) {
+    Writer pak(inputFile, true);
+    if (!pak.isValid()) {
+        LOG("Error opening input file: " + inputFile, LogLevel::Error);
+        return;
+    }
+
+    Reader table(inputFile + ".data");
+    if (!table.isValid()) {
+        LOG("Error opening input file: " + inputFile + ".data", LogLevel::Error);
+        return;
+    }
+
+    readLookupTable(table);
+    pak.seekFromEnd(0);
+    writeLookupTable(pak);
+
+    pak.close();
+    table.close();
+}
+
+void RisePakPatch::decompressPakAndTable(const std::string& inputFile) {
+    Reader pak(inputFile);
+    if (!pak.isValid()) {
+        LOG("Error opening input file: " + inputFile, LogLevel::Error);
+        return;
+    }
+
+    Writer table(inputFile + ".data");
+    if (!table.isValid()) {
+        LOG("Error opening input file: " + inputFile + ".data", LogLevel::Error);
+        return;
+    }
+
+    readLookupTable(pak);
+    writeLookupTable(table);
+    table.close();
+
+    pak.seekFromEnd(-sizeof(RISE_PAK_FOOTER_SIZE));
+    size_t lookupTableSize = pak.readUInt32();
+    size_t risePakFooter   = pak.readUInt32();
+    if (risePakFooter != RISE_PAK_FOOTER) {
+        LOG("Could not find RISE_PAK_FOOTER", LogLevel::Error);
+        return;
+    }
+
+    pak.seek(0);
+    size_t       pakSize    = pak.size();
+    size_t       tableSize  = lookupTableSize + sizeof(uint64_t);
+    const size_t decompSize = pakSize - tableSize;
+    if (decompSize > MAX_SINGLE_FILE_SIZE) {
+        LOG("File data exceeded 1GB.", LogLevel::Error);
+        return;
+    }
+
+    std::vector<char> buffer(decompSize);
+    if (buffer.size() > MAX_SINGLE_FILE_SIZE) {
+        LOG("File data exceeded 1GB.", LogLevel::Error);
+        return;
+    }
+    pak.read(buffer.data(), buffer.size());
+
+    Writer decomp(inputFile);
+    decomp.write(buffer.data(), buffer.size());
+    if (decomp.size() > MAX_SINGLE_FILE_SIZE) {
+        LOG("File data exceeded 1GB.", LogLevel::Error);
+        return;
+    }
+
+    pak.close();
+    decomp.close();
+}
+
 void RisePakPatch::writeLookupTableToFile(const std::string& lookupFile) {
     Writer writer(lookupFile);
+    if (!writer.isValid()) {
+        LOG("Error opening input file: " + lookupFile, LogLevel::Error);
+        return;
+    }
     writeLookupTable(writer);
     writer.close();
 }
@@ -185,10 +281,18 @@ void RisePakPatch::writeLookupTable(Writer& writer) {
 
     writer.writeUInt32(lookupTableSize);
     writer.writeUInt32(RISE_PAK_FOOTER);
+    if (writer.size() > MAX_SINGLE_FILE_SIZE) {
+        LOG("File data exceeded 1GB.", LogLevel::Error);
+        return;
+    }
 }
 
 void RisePakPatch::readLookupTableFromFile(const std::string& lookupFile) {
     Reader reader(lookupFile);
+    if (!reader.isValid()) {
+        LOG("Error opening input file: " + lookupFile, LogLevel::Error);
+        return;
+    }
     readLookupTable(reader);
     reader.close();
 }
@@ -201,7 +305,6 @@ void RisePakPatch::readLookupTable(Reader& reader) {
         LOG("Could not find RISE_PAK_FOOTER", LogLevel::Error);
         return;
     }
-    LOG(std::to_string(risePakFooter), LogLevel::Debug);
     reader.seekFromEnd(-lookupTableSize - sizeof(RISE_PAK_FOOTER_SIZE));
 
     while (reader.position() < reader.size() - sizeof(RISE_PAK_FOOTER_SIZE)) {
