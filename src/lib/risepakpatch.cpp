@@ -117,7 +117,6 @@ void RisePakPatch::extractDirectory(const std::string& inputFile, const std::str
         reader.seekFromEnd(-sizeof(uint32_t));
         size_t lookupTableSize = reader.readUInt32();
         reader.seekFromEnd(-lookupTableSize - sizeof(uint32_t));
-        LOG(std::to_string(reader.position()), LogLevel::Warning);
 
         while (reader.position() < reader.size() - sizeof(uint32_t)) {
             uint32_t hash = reader.readUInt32();
