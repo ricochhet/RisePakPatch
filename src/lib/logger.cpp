@@ -46,6 +46,8 @@ void RisePakPatch::Logger::log(const std::string& message, LogLevel level) {
                 break;
         }
 
+        std::cout << "\033[0m";
+        std::cout << "\033[0;" << getColorCode(level) << "m";
         std::cout << message << "\033[0m\n";
     }
 }
